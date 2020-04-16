@@ -1,20 +1,44 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using SqlStreamStore.Streams;
+using SqlStreamStore.MsSqlScripts;
 
 namespace SqlStreamStore.Demo
 {
     static class Program
     {
-        private static InMemoryStreamStore _streamStore;
-        private static Account _account;
         private static BalanceProjection _balanceProjection;
 
         static async Task Main()
         {
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton<MsSqlStreamStoreSettings>(x => new MsSqlStreamStoreSettings("Server=localhost;Database=mailhelper-dev-db;Trusted_Connection=True;"));
+            serviceCollection.AddSingleton<IStreamStore, MsSqlStreamStore>();
+            serviceCollection.AddSingleton<IEventStore, EventStore>();
+            serviceCollection.AddSingleton<AggregateRepository>();
+            serviceCollection.AddTransient<AccountAggregate>();
+            serviceCollection.AddSingleton<IJsonSerializer, DefaultJsonSerializer>();
+            serviceCollection.AddSingleton<IMessageSerializer, DepositMessageSerializer>();
+            serviceCollection.AddSingleton<IMessageSerializer, WithdrawnMessageSerializer>();
+
+            var serviceProvider = serviceCollection.BuildServiceProvider();
             var streamId = new StreamId($"Account:{Guid.NewGuid()}");
-            _streamStore = new InMemoryStreamStore();
-            _account = new Account(_streamStore, streamId);
+
+            var sqlStreamStore = serviceProvider.GetRequiredService<MsSqlStreamStore>();
+
+            var checkResult = await sqlStreamStore.CheckSchema();
+            if (!checkResult.IsMatch())
+            {
+                await sqlStreamStore.CreateSchema();
+            }
+
+            var aggregateRepository = serviceProvider.GetRequiredService<AggregateRepository>(); 
+            var aggregate = await aggregateRepository.GetById<AccountAggregate>(streamId, CancellationToken.None);
+            
+
             _balanceProjection = new BalanceProjection(_streamStore, streamId);
                 
             var key = string.Empty;
@@ -35,7 +59,7 @@ namespace SqlStreamStore.Demo
                         var depositAmount = GetAmount();
                         if (depositAmount.IsValid)
                         {
-                            var depositTrx = await _account.Deposit(depositAmount.Amount);
+                            var depositTrx = await aggregate.DepositAsync(depositAmount.Amount, CancellationToken.None);
                             Console.WriteLine($"Deposited: {depositAmount.Amount:C} ({depositTrx})");
                         }
                         break;
@@ -43,7 +67,7 @@ namespace SqlStreamStore.Demo
                         var withdrawalAmount = GetAmount();
                         if (withdrawalAmount.IsValid)
                         {
-                            var withdrawalTrx = await _account.Withdrawal(withdrawalAmount.Amount);
+                            var withdrawalTrx = await aggregate.WithdrawAsync(withdrawalAmount.Amount, CancellationToken.None);
                             Console.WriteLine($"Withdrawn: {withdrawalAmount.Amount:C} ({withdrawalTrx})");
                         }
                         break;
