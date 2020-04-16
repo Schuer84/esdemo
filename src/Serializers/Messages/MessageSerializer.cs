@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SqlStreamStore.Demo
+namespace SqlStreamStore.Demo.Serializers.Messages
 {
     public abstract class MessageSerializer : IMessageSerializer
     {

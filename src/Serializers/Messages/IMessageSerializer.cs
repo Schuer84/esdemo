@@ -1,4 +1,4 @@
-﻿namespace SqlStreamStore.Demo
+﻿namespace SqlStreamStore.Demo.Serializers.Messages
 {
     public interface IMessageSerializer
     {

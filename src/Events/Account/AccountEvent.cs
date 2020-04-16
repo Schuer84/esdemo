@@ -1,6 +1,6 @@
 using System;
 
-namespace SqlStreamStore.Demo
+namespace SqlStreamStore.Demo.Events.Account
 {
     public abstract class AccountEvent : Event
     {

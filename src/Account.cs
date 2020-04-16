@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using SqlStreamStore.Demo.Events.Account;
 using SqlStreamStore.Streams;
 
 namespace SqlStreamStore.Demo
@@ -19,7 +20,7 @@ namespace SqlStreamStore.Demo
         public async Task<Guid> Deposit(decimal amount)
         {
             var trx = Guid.NewGuid();
-            var deposit = new Deposited(trx, amount, DateTime.UtcNow);
+            var deposit = new AmountDeposited(trx, amount, DateTime.UtcNow);
             await _streamStore.AppendToStream(_streamId, ExpectedVersion.Any, new NewStreamMessage(trx, "Deposited", JsonConvert.SerializeObject(deposit)));
             return trx;
         }
@@ -27,7 +28,7 @@ namespace SqlStreamStore.Demo
         public async Task<Guid> Withdrawal(decimal amount)
         {
                 var trx = Guid.NewGuid();
-                var deposit = new Withdrawn(trx,amount, DateTime.UtcNow);
+                var deposit = new AmountWithdrawn(trx,amount, DateTime.UtcNow);
                 await _streamStore.AppendToStream(_streamId, ExpectedVersion.Any, new NewStreamMessage(trx, "Withdrawn", JsonConvert.SerializeObject(deposit)));
                 return trx;
         }
@@ -49,13 +50,13 @@ namespace SqlStreamStore.Demo
                     {
                         case "Deposited":
                             var depositedJson = await msg.GetJsonData();
-                            var deposited = JsonConvert.DeserializeObject<Deposited>(depositedJson);
+                            var deposited = JsonConvert.DeserializeObject<AmountDeposited>(depositedJson);
                             Console.WriteLine($"Deposited: {deposited.Amount:C} @ {deposited.DateTime} ({deposited.TransactionId})");
                             balance += deposited.Amount;
                             break;
                         case "Withdrawn":
                             var withdrawnJson = await msg.GetJsonData();
-                            var withdrawn = JsonConvert.DeserializeObject<Withdrawn>(withdrawnJson);
+                            var withdrawn = JsonConvert.DeserializeObject<AmountWithdrawn>(withdrawnJson);
                             Console.WriteLine($"Withdrawn: {withdrawn.Amount:C} @ {withdrawn.DateTime} ({withdrawn.TransactionId})");
                             balance -= withdrawn.Amount;
                             break;

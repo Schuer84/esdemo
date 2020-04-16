@@ -1,63 +1,59 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using SqlStreamStore.Demo.Serializers.Messages;
 using SqlStreamStore.Streams;
 
-namespace SqlStreamStore.Demo
+namespace SqlStreamStore.Demo.Events
 {
+
+    
+
     public class EventStore : IEventStore
     {
         private readonly IStreamStore _streamStore;
-        private readonly IDictionary<string, IMessageSerializer> _messageSerializers;
+        private readonly IEventSerializer _eventSerializer;
 
-        public EventStore(IStreamStore streamStore, IEnumerable<IMessageSerializer> messageSerializers)
+        public EventStore(IStreamStore streamStore, IEventSerializer eventSerializer)
         {
-            if (messageSerializers == null || !messageSerializers.Any())
-            {
-                throw new ArgumentException("no message serializers provided");
-            }
-
             _streamStore = streamStore ?? throw new ArgumentNullException(nameof(streamStore));
-            _messageSerializers = messageSerializers.ToDictionary(x => x.Type, x => x);
+            _eventSerializer = eventSerializer ?? throw new ArgumentNullException(nameof(eventSerializer));
         }
 
-        public async Task<IEnumerable<Event>> GetAllAsync(string streamId, CancellationToken cancellationToken)
+        public async Task<IEnumerable<Event>> GetAllAsync(StreamId streamId, CancellationToken cancellationToken)
         {
             var events = new List<Event>();
+            var loaded = false;
             var readAllPage = await _streamStore.ReadStreamForwards(streamId, 0, 100, cancellationToken);
-            while (!readAllPage.IsEnd)
+            while (!loaded)
             {
                 foreach (var message in readAllPage.Messages)
-                {
-                    if (_messageSerializers.TryGetValue(message.Type, out IMessageSerializer serializer))
-                    {
-                        var json = await message.GetJsonData(cancellationToken);
-                        var data = (Event)serializer.Deserialize(json);
-                        //message.StreamVersion == data.ExpectedVersion?
-
-                        events.Add(data);
-                    }
+                {   
+                    var json = await message.GetJsonData(cancellationToken);
+                    var data = (Event)_eventSerializer.DeserializeEvent(message.Type, json);
+                    //message.StreamVersion == data.ExpectedVersion?
+                    events.Add(data);
                 }
-                readAllPage = await readAllPage.ReadNext(cancellationToken);
+
+                if (!readAllPage.IsEnd)
+                {
+                    readAllPage = await readAllPage.ReadNext(cancellationToken);
+                }
+                else
+                {
+                    loaded = true;
+                }
             }
 
             return events;
         }
 
-        public async Task AppendAsync(string streamId, Event @event, CancellationToken cancellationToken)
+        public async Task AppendAsync(StreamId streamId, Event @event, CancellationToken cancellationToken)
         {
-            if (_messageSerializers.TryGetValue(@event.Type, out IMessageSerializer serializer))
-            {
-                var json = serializer.Serialize(@event);
-                var message = new NewStreamMessage(Guid.NewGuid(), @event.Type, json);
-                await _streamStore.AppendToStream(streamId, @event.ExpectedVersion, message, cancellationToken);
-            }
-            else
-            {
-                throw new InvalidOperationException($"no serializer defined for event {@event.Type}");
-            }
+            var json = _eventSerializer.SerializeEvent(@event.Type, @event);
+            var message = new NewStreamMessage(Guid.NewGuid(), @event.Type, json);
+            await _streamStore.AppendToStream(streamId, @event.ExpectedVersion, message, cancellationToken);
         }
     }
 }

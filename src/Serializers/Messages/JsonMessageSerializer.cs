@@ -1,6 +1,7 @@
 ﻿using System;
+using SqlStreamStore.Demo.Serializers.Json;
 
-namespace SqlStreamStore.Demo
+namespace SqlStreamStore.Demo.Serializers.Messages
 {
     public abstract class JsonMessageSerializer<T> : MessageSerializer
     {

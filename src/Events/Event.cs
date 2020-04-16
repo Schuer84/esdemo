@@ -1,4 +1,4 @@
-﻿namespace SqlStreamStore.Demo
+﻿namespace SqlStreamStore.Demo.Events
 {
     public abstract class Event
     {

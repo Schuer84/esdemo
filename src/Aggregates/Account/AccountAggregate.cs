@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
+using SqlStreamStore.Demo.Events;
+using SqlStreamStore.Demo.Events.Account;
 
-namespace SqlStreamStore.Demo
+namespace SqlStreamStore.Demo.Aggregates.Account
 {
     public class AccountAggregate : AggregateBase<AccountAggregateState>
     {
@@ -10,22 +10,22 @@ namespace SqlStreamStore.Demo
             : base(eventStore)
         { }
 
-        public async Task<Guid> WithdrawAsync(decimal amount, CancellationToken cancellationToken)
+        public Guid Withdraw(decimal amount)
         {
             if (State.CanWithdraw(amount))
             {
-                var withdrawEvent = new Withdrawn(Guid.NewGuid(), amount, DateTime.UtcNow);
-                await EmitAsync(withdrawEvent, cancellationToken);
+                var withdrawEvent = new AmountWithdrawn(Guid.NewGuid(), amount, DateTime.UtcNow);
+                Emit(withdrawEvent);
                 return withdrawEvent.TransactionId;
             }
             throw new InvalidOperationException($"unable to withdraw {amount}");
         }
-        public async Task<Guid> DepositAsync(decimal amount, CancellationToken cancellationToken)
+        public Guid Deposit(decimal amount)
         {
             if (State.CanDeposit(amount))
             {
-                var deposited = new Deposited(Guid.NewGuid(), amount, DateTime.UtcNow);
-                await EmitAsync(deposited, cancellationToken);
+                var deposited = new AmountDeposited(Guid.NewGuid(), amount, DateTime.UtcNow);
+                Emit(deposited);
                 return deposited.TransactionId;
             }
             throw  new InvalidOperationException($"unable to deposit {amount}");

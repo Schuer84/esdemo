@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace SqlStreamStore.Demo
+namespace SqlStreamStore.Demo.Serializers.Json
 {
     public class DefaultJsonSerializer : IJsonSerializer
     {

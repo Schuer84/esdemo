@@ -2,8 +2,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using SqlStreamStore.Demo.Events;
+using SqlStreamStore.Streams;
 
-namespace SqlStreamStore.Demo
+namespace SqlStreamStore.Demo.Aggregates
 {
     public class AggregateRepository
     {
@@ -16,7 +18,7 @@ namespace SqlStreamStore.Demo
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         }
 
-        public async Task<TAggregate> GetById<TAggregate>(string id, CancellationToken cancellationToken)
+        public async Task<TAggregate> GetById<TAggregate>(StreamId id, CancellationToken cancellationToken)
             where TAggregate: IEventSourcedAggregate
         {
             var aggregate = _serviceProvider.GetRequiredService<TAggregate>();

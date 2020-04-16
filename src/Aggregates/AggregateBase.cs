@@ -1,7 +1,7 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using SqlStreamStore.Demo.Events;
 
-namespace SqlStreamStore.Demo
+namespace SqlStreamStore.Demo.Aggregates
 {
     public abstract class AggregateBase<TState> : IAggregate, IEventSourcedAggregate
         where TState: class, IAggregateState, new()
@@ -17,6 +17,7 @@ namespace SqlStreamStore.Demo
         public string Id { get; protected set; }
         public int Version { get; set; }
 
+        private List<object> PendingChanges { get; set; } = new List<object>();
 
         void IEventSourcedAggregate.Init(string id)
         {
@@ -30,9 +31,35 @@ namespace SqlStreamStore.Demo
             Version = version;
         }
 
-        public async Task EmitAsync(Event @event, CancellationToken cancellationToken)
+        void IEventSourcedAggregate.Apply(IChangeSet changeSet)
         {
-            await _eventStore.AppendAsync(Id, @event, cancellationToken);
+            foreach (var @event in changeSet.Events)
+            {
+                State.CallNonPublicIfExists("On", @event);
+            }
+
+            Version = changeSet.Version;
+        }
+
+        IChangeSet IEventSourcedAggregate.GetChangeSet()
+        {
+            return new ChangeSet()
+            {
+                Events = PendingChanges.ToArray(),
+                Version = Version
+            };
+        }
+
+
+        protected void Emit(Event @event)
+        {
+            State.CallNonPublicIfExists("On", @event);
+            Track(@event);
+        }
+
+        protected virtual void Track(object @event)
+        {
+            this.PendingChanges.Add(@event);
         }
     }
 }

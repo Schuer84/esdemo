@@ -1,4 +1,4 @@
-﻿namespace SqlStreamStore.Demo
+﻿namespace SqlStreamStore.Demo.Aggregates
 {
     public abstract class AggregateStateBase : IAggregateState
     {

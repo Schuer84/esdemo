@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace SqlStreamStore.Demo
+﻿namespace SqlStreamStore.Demo.Aggregates
 {
     public interface IAggregate
     {
