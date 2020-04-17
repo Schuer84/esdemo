@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using SqlStreamStore.Demo.Events;
 
 namespace SqlStreamStore.Demo.Aggregates
@@ -17,7 +18,7 @@ namespace SqlStreamStore.Demo.Aggregates
         public string Id { get; protected set; }
         public int Version { get; set; }
 
-        private List<object> PendingChanges { get; set; } = new List<object>();
+        private List<Event> PendingChanges { get; set; } = new List<Event>();
 
         void IEventSourcedAggregate.Init(string id)
         {
@@ -45,7 +46,7 @@ namespace SqlStreamStore.Demo.Aggregates
         {
             return new ChangeSet()
             {
-                Events = PendingChanges.ToArray(),
+                Events = PendingChanges.ToList(),
                 Version = Version
             };
         }
@@ -57,8 +58,10 @@ namespace SqlStreamStore.Demo.Aggregates
             Track(@event);
         }
 
-        protected virtual void Track(object @event)
+        protected virtual void Track(Event @event)
         {
+            @event.ExpectedVersion = this.Version;
+            this.Version += 1;
             this.PendingChanges.Add(@event);
         }
     }

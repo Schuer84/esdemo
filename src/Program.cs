@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using SqlStreamStore.Demo.Aggregates;
 using SqlStreamStore.Demo.Aggregates.Account;
 using SqlStreamStore.Demo.Commands;
+using SqlStreamStore.Demo.Commands.Account;
 using SqlStreamStore.Demo.Events;
 using SqlStreamStore.Demo.Serializers.Json;
 using SqlStreamStore.Demo.Serializers.Messages;
@@ -18,6 +19,14 @@ using SqlStreamStore.MsSqlScripts;
 
 namespace SqlStreamStore.Demo
 {
+
+    public interface IServiceCollectionConfiguration
+    {
+        void Configure(IServiceCollection serviceCollection);
+    }
+
+    
+
     static class Program
     {
         private static BalanceProjection _balanceProjection;
@@ -36,12 +45,17 @@ namespace SqlStreamStore.Demo
             serviceCollection.AddSingleton<IMessageSerializer, WithdrawnMessageSerializer>();
             serviceCollection.AddTransient<IEventSerializer, EventSerializer>();
 
+            serviceCollection.AddTransient<IAggregateRepository, AggregateRepository>();
+
             serviceCollection.AddTransient<ICommandHandler, CommandHandler>();
+
+            serviceCollection.AddTransient<ICommandHandler<WithdrawAmountCommand>, WithdrawAmountCommandHandler>();
+            serviceCollection.AddTransient<ICommandHandler<DepositAmountCommand>, DepositAmountCommandHandler>();
+
             serviceCollection.AddTransient<IAccountService, AccountService>();
 
-
+            var accountId = Guid.Parse("5af8872f-fd5c-4599-ac0d-29ddf400d823");
             var serviceProvider = serviceCollection.BuildServiceProvider();
-            var streamId = new StreamId($"Account:5af8872f-fd5c-4599-ac0d-29ddf400d823");
 
             var sqlStreamStore = serviceProvider.GetRequiredService<MsSqlStreamStore>();
 
@@ -51,12 +65,12 @@ namespace SqlStreamStore.Demo
                 await sqlStreamStore.CreateSchema();
             }
 
-            var aggregateRepository = serviceProvider.GetRequiredService<AggregateRepository>(); 
-            var aggregate = await aggregateRepository.GetById<AccountAggregate>(streamId, CancellationToken.None);
-            var readmodel = new AccountInfo();
+            var accountService = serviceProvider.GetService<IAccountService>();
+             var readmodel = new AccountInfo();
 
-            _balanceProjection = new BalanceProjection(sqlStreamStore, streamId, serviceProvider.GetService<IEventSerializer>(), readmodel);
-                
+            _balanceProjection = new BalanceProjection(sqlStreamStore, $"Account:5af8872f-fd5c-4599-ac0d-29ddf400d823", serviceProvider.GetService<IEventSerializer>(), readmodel);
+
+
             var key = string.Empty;
             while (key != "X")
             {
@@ -77,16 +91,16 @@ namespace SqlStreamStore.Demo
                             var depositAmount = GetAmount();
                             if (depositAmount.IsValid)
                             {
-                                var depositTrx = aggregate.Deposit(depositAmount.Amount);
-                                Console.WriteLine($"Deposited: {depositAmount.Amount:C} ({depositTrx})");
+                                await accountService.Deposit(accountId, depositAmount.Amount, CancellationToken.None);
+                                Console.WriteLine($"Deposited: {depositAmount.Amount:C}");
                             }
                             break;
                         case "W":
                             var withdrawalAmount = GetAmount();
                             if (withdrawalAmount.IsValid)
                             {
-                                var withdrawalTrx = aggregate.Withdraw(withdrawalAmount.Amount);
-                                Console.WriteLine($"Withdrawn: {withdrawalAmount.Amount:C} ({withdrawalTrx})");
+                                await accountService.Deposit(accountId, withdrawalAmount.Amount, CancellationToken.None);
+                                Console.WriteLine($"Withdrawn: {withdrawalAmount.Amount:C} ()");
                             }
                             break;
                         case "B":

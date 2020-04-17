@@ -2,7 +2,7 @@
 {
     public interface ICommand
     {
-        
+        string GetAggregateId();
     }
 
 }

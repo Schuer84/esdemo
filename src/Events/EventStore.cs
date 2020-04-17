@@ -32,7 +32,7 @@ namespace SqlStreamStore.Demo.Events
                 {   
                     var json = await message.GetJsonData(cancellationToken);
                     var data = (Event)_eventSerializer.DeserializeEvent(message.Type, json);
-                    //message.StreamVersion == data.ExpectedVersion?
+                        data.ExpectedVersion = message.StreamVersion;
                     events.Add(data);
                 }
 

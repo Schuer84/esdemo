@@ -7,7 +7,16 @@ using SqlStreamStore.Streams;
 
 namespace SqlStreamStore.Demo.Aggregates
 {
-    public class AggregateRepository
+    public interface IAggregateRepository
+    {
+        Task<TAggregate> GetById<TAggregate>(StreamId id, CancellationToken cancellationToken)
+            where TAggregate: IEventSourcedAggregate;
+
+        Task Save<TAggregate>(TAggregate aggregate, CancellationToken cancellationToken)
+            where TAggregate : IEventSourcedAggregate;
+    }
+
+    public class AggregateRepository : IAggregateRepository
     {
         private readonly IEventStore _eventStore;
         private readonly IServiceProvider _serviceProvider;
@@ -22,7 +31,7 @@ namespace SqlStreamStore.Demo.Aggregates
             where TAggregate: IEventSourcedAggregate
         {
             var aggregate = _serviceProvider.GetRequiredService<TAggregate>();
-            aggregate.Init(id);
+                aggregate.Init(id);
 
             var events = await _eventStore.GetAllAsync(id, cancellationToken);
 
@@ -32,6 +41,18 @@ namespace SqlStreamStore.Demo.Aggregates
                 aggregate.Apply(@event.ExpectedVersion, @event);
             }
             return aggregate;
+        }
+
+        public async Task Save<TAggregate>(TAggregate aggregate, CancellationToken cancellationToken)
+            where TAggregate: IEventSourcedAggregate
+        {
+            if (aggregate == null) throw new ArgumentNullException(nameof(aggregate));
+            
+            var changeset = aggregate.GetChangeSet();
+            foreach (var @event in changeset.Events)
+            {
+                await _eventStore.AppendAsync(aggregate.Id, @event, cancellationToken);
+            }
         }
     }
 }

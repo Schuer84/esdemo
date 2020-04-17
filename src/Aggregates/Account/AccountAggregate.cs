@@ -10,25 +10,30 @@ namespace SqlStreamStore.Demo.Aggregates.Account
             : base(eventStore)
         { }
 
-        public Guid Withdraw(decimal amount)
+        public void Withdraw(decimal amount)
         {
             if (State.CanWithdraw(amount))
             {
                 var withdrawEvent = new AmountWithdrawn(Guid.NewGuid(), amount, DateTime.UtcNow);
                 Emit(withdrawEvent);
-                return withdrawEvent.TransactionId;
+
             }
-            throw new InvalidOperationException($"unable to withdraw {amount}");
+            else
+            {
+                throw new InvalidOperationException($"unable to withdraw {amount}");
+            }
         }
-        public Guid Deposit(decimal amount)
+        public void Deposit(decimal amount)
         {
             if (State.CanDeposit(amount))
             {
                 var deposited = new AmountDeposited(Guid.NewGuid(), amount, DateTime.UtcNow);
                 Emit(deposited);
-                return deposited.TransactionId;
             }
-            throw  new InvalidOperationException($"unable to deposit {amount}");
+            else
+            {
+                throw new InvalidOperationException($"unable to deposit {amount}");
+            }
         }
 
 
