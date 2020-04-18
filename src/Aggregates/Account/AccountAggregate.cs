@@ -6,29 +6,39 @@ namespace SqlStreamStore.Demo.Aggregates.Account
 {
     public class AccountAggregate : AggregateBase<AccountAggregateState>
     {
-        public AccountAggregate(IEventStore eventStore) 
+        public AccountAggregate(IEventStore eventStore)
             : base(eventStore)
-        { }
+        {
+        }
 
         public void Withdraw(decimal amount)
         {
             if (State.CanWithdraw(amount))
             {
-                var withdrawEvent = new AmountWithdrawn(Guid.NewGuid(), amount, DateTime.UtcNow);
-                Emit(withdrawEvent);
-
+                var amountWithdrawn = new AmountWithdrawn()
+                {
+                    Amount = amount,
+                    AccountId = GetAccountId()
+                };
+                
+                Emit(amountWithdrawn);
             }
             else
             {
                 throw new InvalidOperationException($"unable to withdraw {amount}");
             }
         }
+
         public void Deposit(decimal amount)
         {
             if (State.CanDeposit(amount))
             {
-                var deposited = new AmountDeposited(Guid.NewGuid(), amount, DateTime.UtcNow);
-                Emit(deposited);
+                var amountDeposited = new AmountDeposited()
+                {
+                    Amount = amount,
+                    AccountId = GetAccountId()
+                };
+                Emit(amountDeposited);
             }
             else
             {
@@ -36,6 +46,10 @@ namespace SqlStreamStore.Demo.Aggregates.Account
             }
         }
 
-
-    }
+        private Guid GetAccountId()
+        {
+            return Guid.Parse(Id.Replace("Account:", ""));
+        }
+        
+}
 }

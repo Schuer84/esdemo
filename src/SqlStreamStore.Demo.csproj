@@ -6,12 +6,17 @@
     </PropertyGroup>
     
     <ItemGroup>
+        <PackageReference Include="EntityFramework" Version="6.4.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.3" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.3" />
         <PackageReference Include="SqlStreamStore" Version="1.1.3" />
         <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
         <PackageReference Include="LiquidProjections" Version="3.2.0" />
         <PackageReference Include="SqlStreamStore.MsSql" Version="1.1.3" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\LiquidProjections.EntityFramework\LiquidProjections.EntityFramework.csproj" />
     </ItemGroup>
 
 </Project>

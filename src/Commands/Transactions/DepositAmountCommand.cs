@@ -6,7 +6,7 @@ using SqlStreamStore.Demo.Aggregates.Account;
 
 namespace SqlStreamStore.Demo.Commands.Account
 {
-    public class DepositAmountCommand : AccountCommand
+    public class DepositAmountCommand : TransactionCommand
     {
         public decimal Amount { get; set; }
     }

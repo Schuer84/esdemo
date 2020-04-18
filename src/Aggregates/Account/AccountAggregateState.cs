@@ -1,11 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using SqlStreamStore.Demo.Events.Account;
 
 namespace SqlStreamStore.Demo.Aggregates.Account
 {
     public class AccountAggregateState : AggregateStateBase
     {
-        protected Balance Balance { get; } = new Balance(0, DateTime.UtcNow);
+        private Balance Balance { get; } = new Balance(0, DateTime.UtcNow);
+        private IEnumerable<Person> Owners { get; } = new List<Person>();
 
 
         public bool CanWithdraw(decimal amount)

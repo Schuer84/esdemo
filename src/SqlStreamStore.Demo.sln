@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.30002.166
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SqlStreamStore.Demo", "SqlStreamStore.Demo.csproj", "{DB13C311-43CB-4A15-A8C7-59D642382925}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiquidProjections.EntityFramework", "..\LiquidProjections.EntityFramework\LiquidProjections.EntityFramework.csproj", "{3D17A822-A93F-4CEB-8701-E53DA3918FC9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{DB13C311-43CB-4A15-A8C7-59D642382925}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB13C311-43CB-4A15-A8C7-59D642382925}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB13C311-43CB-4A15-A8C7-59D642382925}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D17A822-A93F-4CEB-8701-E53DA3918FC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D17A822-A93F-4CEB-8701-E53DA3918FC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D17A822-A93F-4CEB-8701-E53DA3918FC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D17A822-A93F-4CEB-8701-E53DA3918FC9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

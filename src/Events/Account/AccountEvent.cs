@@ -1,19 +1,22 @@
 using System;
+using SqlStreamStore.Demo.Serializers.Messages;
 
 namespace SqlStreamStore.Demo.Events.Account
 {
     public abstract class AccountEvent : Event
     {
-        public Guid TransactionId { get; }
-        public decimal Amount { get; }
-        public DateTime DateTime { get; }
-        
-        public AccountEvent(Guid transactionId, decimal amount, DateTime dateTime, string type) 
+        public Guid AccountId { get; set; }
+
+        protected AccountEvent(string type) 
             : base(type)
-        {
-            TransactionId = transactionId;
-            Amount = amount;
-            DateTime = dateTime;
-        }
+        { }
+    }
+
+    public class AccountRegisteredEvent : AccountEvent
+    {
+        public AccountRegisteredEvent()
+            : base(MessageTypes.Account.Registered)
+        { }
+        public Guid UserId { get; set; }
     }
 }

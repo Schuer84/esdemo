@@ -4,11 +4,14 @@
     {
         public class Account
         {
-            public class Balance
-            {
-                public const string Withdrawn = nameof(Withdrawn);
-                public const string Deposited = nameof(Deposited);
-            }
+            public static string Registered = $"{nameof(Account)}.{nameof(Registered)}";
+        }
+
+        public class Transaction
+        {
+            public static string Withdrawn = $"{nameof(Transaction)}.{nameof(Withdrawn)}"; 
+            public static string Deposited = $"{nameof(Transaction)}.{nameof(Deposited)}"; 
+            public static string Transfered = $"{nameof(Transaction)}.{nameof(Transfered)}";
         }
     }
 }

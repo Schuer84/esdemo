@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LiquidProjections;
+using LiquidProjections.Abstractions;
 using Newtonsoft.Json;
 using SqlStreamStore.Demo.Events.Account;
 using SqlStreamStore.Demo.Serializers.Messages;
@@ -72,5 +73,24 @@ namespace SqlStreamStore.Demo
             var @event = await DeserializeJsonEvent(streamMessage, cancellationToken);
             await _map.Handle(@event, _accountInfo);
         }
-    } 
+    }
+
+    public class StreamStoreSubscription
+    {
+        private readonly IStreamStore _streamStore;
+        private readonly StreamId _streamId;
+        private readonly IEventSerializer _eventSerializer;
+
+        public StreamStoreSubscription(IStreamStore streamStore, StreamId streamId, IEventSerializer eventSerializer)
+        {
+            _streamStore = streamStore;
+            _streamId = streamId;
+            _eventSerializer = eventSerializer ?? throw new ArgumentNullException(nameof(eventSerializer));
+        }
+
+        public IDisposable Subscribe(long? lastProcessedCheckpoint, Subscriber subscriber, string subscriptionId)
+        {
+            var subscription = new Subscription(lastProcessedCheckpoint ?? 0, subscriber);
+        }
+    }
 }
