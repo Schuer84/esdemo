@@ -2,13 +2,6 @@
 
 namespace SqlStreamStore.Demo.Persistence.Entities
 {
-    public enum TransactionType
-    {
-        Withdrawal,
-        Deposit,
-        Transfer
-    }
-
     public class Transaction : Entity
     {
         public Guid AccountId { get; set; }

@@ -8,61 +8,17 @@ using LiquidProjections;
 using LiquidProjections.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using SqlStreamStore.Demo.Aggregates;
-using SqlStreamStore.Demo.Aggregates.Account;
-using SqlStreamStore.Demo.Commands;
-using SqlStreamStore.Demo.Commands.Account;
-using SqlStreamStore.Demo.Events;
 using SqlStreamStore.Demo.Persistence;
 using SqlStreamStore.Demo.Projectors;
-using SqlStreamStore.Demo.Serializers.Json;
 using SqlStreamStore.Demo.Serializers.Messages;
-using SqlStreamStore.Demo.Serializers.Messages.Account;
 using SqlStreamStore.Demo.Services;
 using SqlStreamStore.Streams;
 using SqlStreamStore.MsSqlScripts;
-using IEventStore = SqlStreamStore.Demo.Events.IEventStore;
 
 namespace SqlStreamStore.Demo
 {
-
-    public interface IServiceCollectionConfiguration
-    {
-        void Configure(IServiceCollection serviceCollection);
-    }
-
-
-    public class ServiceCollectionConfiguration : IServiceCollectionConfiguration
-    {
-        public void Configure(IServiceCollection serviceCollection)
-        {
-            serviceCollection.AddSingleton<MsSqlStreamStoreSettings>(x => new MsSqlStreamStoreSettings("Server=localhost;Database=mailhelper-dev-db;Trusted_Connection=True;"));
-            serviceCollection.AddSingleton<IStreamStore, MsSqlStreamStore>();
-            serviceCollection.AddSingleton<MsSqlStreamStore>();
-            serviceCollection.AddSingleton<IEventStore, EventStore>();
-            serviceCollection.AddSingleton<AggregateRepository>();
-            serviceCollection.AddTransient<AccountAggregate>();
-            serviceCollection.AddSingleton<IJsonSerializer, DefaultJsonSerializer>();
-            serviceCollection.AddSingleton<IMessageSerializer, DepositMessageSerializer>();
-            serviceCollection.AddSingleton<IMessageSerializer, WithdrawnMessageSerializer>();
-            serviceCollection.AddTransient<IEventSerializer, EventSerializer>();
-
-            serviceCollection.AddTransient<IAggregateRepository, AggregateRepository>();
-
-            serviceCollection.AddTransient<ICommandHandler, CommandHandler>();
-
-            serviceCollection.AddTransient<ICommandHandler<WithdrawAmountCommand>, WithdrawAmountCommandHandler>();
-            serviceCollection.AddTransient<ICommandHandler<DepositAmountCommand>, DepositAmountCommandHandler>();
-
-            serviceCollection.AddTransient<IAccountService, AccountService>();
-
-        }
-    }
-    
-
     static class Program
     {
-        private static BalanceProjection _balanceProjection;
 
         static async Task Main()
         {
@@ -74,6 +30,10 @@ namespace SqlStreamStore.Demo
 
             var accountId = Guid.Parse("5af8872f-fd5c-4599-ac0d-29ddf400d823");
             var streamId = "Transaction:5af8872f-fd5c-4599-ac0d-29ddf400d823";
+            Database.SetInitializer(new CreateDatabaseIfNotExists<AccountDbContext>());
+
+            var accountDbContext = serviceProvider.GetService<AccountDbContext>();
+                accountDbContext.Database.CreateIfNotExists();
 
             var sqlStreamStore = serviceProvider.GetRequiredService<MsSqlStreamStore>();
             var checkResult = await sqlStreamStore.CheckSchema();
@@ -83,21 +43,19 @@ namespace SqlStreamStore.Demo
             }
 
             var accountService = serviceProvider.GetService<IAccountService>();
+            var eventSerializer = serviceProvider.GetService<IEventSerializer>();
             
-            var accountDbContext = new AccountDbContext();
-            Func<DbContext> accountDbContextProvider = () => accountDbContext;
-
-
             
-            var lastProcessed = 
-            sqlStreamStore.SubscribeToStream(streamId, null, StreamMessageReceived);
+            Func<DbContext> accountDbContextProvider = () => serviceProvider.GetService<AccountDbContext>();
 
-            var transactionDispatcher = new Dispatcher(() => sqlStreamStore.SubscribeToStream());
+
+            var subscriber = new StreamStoreSubscriber(sqlStreamStore, streamId, eventSerializer);
+            var transactionDispatcher = new Dispatcher(subscriber.Subscribe);
             var accountProjector = new AccountProjector(accountDbContextProvider, transactionDispatcher);
-            
-            var readmodel = new AccountInfo();
+                accountProjector.Start();
+            //var readmodel = new AccountInfo();
 
-            _balanceProjection = new BalanceProjection(sqlStreamStore, $"Transaction:5af8872f-fd5c-4599-ac0d-29ddf400d823", serviceProvider.GetService<IEventSerializer>(), readmodel);
+            //_balanceProjection = new BalanceProjection(sqlStreamStore, $"Transaction:5af8872f-fd5c-4599-ac0d-29ddf400d823", serviceProvider.GetService<IEventSerializer>(), readmodel);
 
 
             var key = string.Empty;
@@ -133,12 +91,14 @@ namespace SqlStreamStore.Demo
                             }
                             break;
                         case "B":
-                            Console.WriteLine($"{readmodel.Balance.Amount} as of {readmodel.Balance.AsOf}");
+                            var balance = await accountService.GetCurrentBalance(accountId, CancellationToken.None);
+                            Console.WriteLine($"You currently have: {balance} ");
                             break;
                         case "T":
-                            foreach (var transaction in readmodel.Transactions)
+                            var transactions = await accountService.GetTransactions(accountId, CancellationToken.None);
+                            foreach (var transaction in transactions)
                             {
-                                Console.WriteLine($"{transaction.Type}: {transaction.Amount:C} @ {transaction.DateTime} ({transaction.TransactionId})");
+                                Console.WriteLine($"{transaction.Type}: {transaction.Amount:C} @ {transaction.CreatedOn} ({transaction.Id})");
                             }
                             break;
                     }
@@ -162,11 +122,6 @@ namespace SqlStreamStore.Demo
 
             Console.WriteLine("Invalid Amount.");
             return (0, false);
-        }
-
-        private static IDisposable CreateSubscription(IStreamStore streamStore, string streamId)
-        {
-
         }
 
 

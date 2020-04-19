@@ -6,7 +6,7 @@ namespace SqlStreamStore.Demo.Serializers.Messages.Account
     public class WithdrawnMessageSerializer : JsonMessageSerializer<AmountWithdrawn>
     {   
         public WithdrawnMessageSerializer(IJsonSerializer serializer) 
-            : base(MessageTypes.Account.Balance.Withdrawn, serializer)
+            : base(MessageTypes.Transaction.Withdrawn, serializer)
         {
         }
     }

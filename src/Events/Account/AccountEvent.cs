@@ -1,5 +1,4 @@
 using System;
-using SqlStreamStore.Demo.Serializers.Messages;
 
 namespace SqlStreamStore.Demo.Events.Account
 {
@@ -10,13 +9,5 @@ namespace SqlStreamStore.Demo.Events.Account
         protected AccountEvent(string type) 
             : base(type)
         { }
-    }
-
-    public class AccountRegisteredEvent : AccountEvent
-    {
-        public AccountRegisteredEvent()
-            : base(MessageTypes.Account.Registered)
-        { }
-        public Guid UserId { get; set; }
     }
 }

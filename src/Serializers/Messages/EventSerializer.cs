@@ -4,12 +4,6 @@ using System.Linq;
 
 namespace SqlStreamStore.Demo.Serializers.Messages
 {
-    public interface IEventSerializer
-    {
-        string SerializeEvent(string type, object @event);
-        object DeserializeEvent(string type, string json);
-    }
-
     public class EventSerializer : IEventSerializer
     {
         private readonly IDictionary<string, IMessageSerializer> _messageSerializers;

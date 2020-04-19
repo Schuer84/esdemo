@@ -48,7 +48,7 @@ namespace SqlStreamStore.Demo.Aggregates.Account
 
         private Guid GetAccountId()
         {
-            return Guid.Parse(Id.Replace("Account:", ""));
+            return Guid.Parse(Id.Replace("Transaction:", ""));
         }
         
 }

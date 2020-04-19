@@ -53,7 +53,7 @@ namespace SqlStreamStore.Demo.Events
         {
             var json = _eventSerializer.SerializeEvent(@event.Type, @event);
             var message = new NewStreamMessage(Guid.NewGuid(), @event.Type, json);
-            await _streamStore.AppendToStream(streamId, @event.ExpectedVersion, message, cancellationToken);
+            await _streamStore.AppendToStream(streamId, @event.ExpectedVersion == 0 ? ExpectedVersion.Any : @event.ExpectedVersion, message, cancellationToken);
         }
     }
 }

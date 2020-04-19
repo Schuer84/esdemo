@@ -1,16 +1,18 @@
 ﻿using System.Collections;
 using System.Threading;
 using System.Threading.Tasks;
-using SqlStreamStore.Demo.Queries.Page;
 
 namespace SqlStreamStore.Demo.Queries
 {
 
     public interface IQueryHandler
     {
-       Task<IEnumerable> QueryList(IQuery query, CancellationToken cancellationToken);
-       Task<IPage> QueryPage(IPageQuery query, CancellationToken cancellationToken);
+        Task<TResult> Query<TEntity, TResult>(IQuery<TEntity> query, CancellationToken cancellationToken);
     }
 
-   
+
+    public interface IQueryHandler<TQuery, TResult>
+    {
+        Task<TResult> Query(TQuery query, CancellationToken cancellationToken);
+    }
 }
